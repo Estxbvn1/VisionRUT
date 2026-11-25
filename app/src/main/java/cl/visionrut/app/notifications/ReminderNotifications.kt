@@ -53,22 +53,35 @@ class ProgramadorRecordatoriosAndroid(context: Context) : ProgramadorRecordatori
 
 /** Programa, restaura y cancela las alarmas locales de suscripciones. */
 object ReminderScheduler {
-    const val CHANNEL = "subscription_reminders"
+    private const val LEGACY_CHANNEL = "subscription_reminders"
+    private const val CHANNEL = "subscription_reminders_alerts"
     private const val PREVIEW_TAG = "preview"
 
     fun createChannel(context: Context) {
-        context
-            .getSystemService(NotificationManager::class.java)
-            .createNotificationChannel(
-                NotificationChannel(
-                        CHANNEL,
-                        "Recordatorios de servicios",
-                        NotificationManager.IMPORTANCE_DEFAULT,
-                    )
-                    .apply {
-                        description = "Avisos un día antes del próximo cobro de tus servicios"
-                    }
-            )
+        channelForReminders(context)
+    }
+
+    private fun channelForReminders(context: Context): NotificationChannel {
+        val manager = context.getSystemService(NotificationManager::class.java)
+        manager.getNotificationChannel(CHANNEL)?.let { return it }
+        val previous = manager.getNotificationChannel(LEGACY_CHANNEL)
+        // Android conserva la importancia elegida por el usuario, incluso al actualizar la app.
+        if (previous != null && (previous.importance != NotificationManager.IMPORTANCE_DEFAULT ||
+                previous.sound == null || (Build.VERSION.SDK_INT >= 29 && previous.hasUserSetImportance()))) {
+            return previous
+        }
+        val channel = NotificationChannel(CHANNEL, "Avisos de cobro", NotificationManager.IMPORTANCE_HIGH)
+        channel.description = "Avisos un día antes del próximo cobro de tus servicios"
+        previous?.let {
+            channel.setSound(it.sound, it.audioAttributes)
+            channel.vibrationPattern = it.vibrationPattern
+            channel.enableVibration(it.shouldVibrate())
+            channel.lightColor = it.lightColor
+            channel.enableLights(it.shouldShowLights())
+            channel.setShowBadge(it.canShowBadge())
+        }
+        manager.createNotificationChannel(channel)
+        return channel
     }
 
     fun permitted(context: Context): Boolean {
@@ -78,13 +91,10 @@ object ReminderScheduler {
                     context,
                     Manifest.permission.POST_NOTIFICATIONS,
                 ) == PackageManager.PERMISSION_GRANTED
-        val channel =
-            context
-                .getSystemService(NotificationManager::class.java)
-                .getNotificationChannel(CHANNEL)
+        val channel = channelForReminders(context)
         return runtime &&
             NotificationManagerCompat.from(context).areNotificationsEnabled() &&
-            channel?.importance != NotificationManager.IMPORTANCE_NONE
+            channel.importance != NotificationManager.IMPORTANCE_NONE
     }
 
     fun post(context: Context, reminder: Recordatorio, due: Long, preview: Boolean = false): Boolean {
@@ -95,7 +105,7 @@ object ReminderScheduler {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
         val message = "Próximo cobro: ${dateLabel(due)}."
-        val notification = NotificationCompat.Builder(context, CHANNEL)
+        val notification = NotificationCompat.Builder(context, channelForReminders(context).id)
             .setSmallIcon(R.drawable.ic_notification)
             .setColor(0xFFFF7900.toInt())
             .setContentTitle("Revisa ${reminder.service}")

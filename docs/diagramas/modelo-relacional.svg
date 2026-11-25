@@ -1,0 +1,82 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="516" viewBox="0 0 1120 516" role="img" aria-labelledby="title desc">
+  <title id="title">VisiónRUT · Modelo relacional</title><desc id="desc">Cada egreso admite cero o una categoría y cero o un recordatorio. Cada recordatorio corresponde a un único egreso.</desc>
+  <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#617b93"/></marker></defs>
+  <rect width="1120" height="516" fill="white"/>
+  <text x="28" y="44" text-anchor="start" font-family="Arial, sans-serif" font-size="27" fill="#203952" font-weight="700">VisiónRUT · Modelo relacional</text>
+  <text x="28" y="76" text-anchor="start" font-family="Arial, sans-serif" font-size="17" fill="#203952">Room / SQLite   ·   visionrut.db   ·   esquema 5</text>
+  <rect x="25" y="118" width="258" height="237" rx="0" fill="white" stroke="#617b93"/>
+  <rect x="25" y="118" width="258" height="52" rx="0" fill="#eaf2fa" stroke="#617b93"/>
+  <text x="40" y="151" text-anchor="start" font-family="Arial, sans-serif" font-size="22" fill="#203952" font-weight="700">categorias</text>
+  <text x="39" y="195" text-anchor="start" font-family="Arial, sans-serif" font-size="17" fill="#203952">id</text>
+  <text x="271" y="195" text-anchor="end" font-family="Arial, sans-serif" font-size="13" fill="#203952" font-weight="700">PK</text>
+  <path d="M26 207 h256" fill="none" stroke="#617b93" stroke-width="1.8"/>
+  <text x="39" y="232" text-anchor="start" font-family="Arial, sans-serif" font-size="17" fill="#203952">nombre</text>
+  <text x="271" y="232" text-anchor="end" font-family="Arial, sans-serif" font-size="13" fill="#203952" font-weight="700"></text>
+  <path d="M26 244 h256" fill="none" stroke="#617b93" stroke-width="1.8"/>
+  <text x="39" y="269" text-anchor="start" font-family="Arial, sans-serif" font-size="17" fill="#203952">icono</text>
+  <text x="271" y="269" text-anchor="end" font-family="Arial, sans-serif" font-size="13" fill="#203952" font-weight="700"></text>
+  <path d="M26 281 h256" fill="none" stroke="#617b93" stroke-width="1.8"/>
+  <text x="39" y="306" text-anchor="start" font-family="Arial, sans-serif" font-size="17" fill="#203952">color</text>
+  <text x="271" y="306" text-anchor="end" font-family="Arial, sans-serif" font-size="13" fill="#203952" font-weight="700"></text>
+  <path d="M26 318 h256" fill="none" stroke="#617b93" stroke-width="1.8"/>
+  <text x="39" y="343" text-anchor="start" font-family="Arial, sans-serif" font-size="17" fill="#203952">es_predefinida</text>
+  <text x="271" y="343" text-anchor="end" font-family="Arial, sans-serif" font-size="13" fill="#203952" font-weight="700"></text>
+  <rect x="417" y="118" width="263" height="311" rx="0" fill="white" stroke="#617b93"/>
+  <rect x="417" y="118" width="263" height="52" rx="0" fill="#eaf2fa" stroke="#617b93"/>
+  <text x="432" y="151" text-anchor="start" font-family="Arial, sans-serif" font-size="22" fill="#203952" font-weight="700">egresos</text>
+  <text x="431" y="195" text-anchor="start" font-family="Arial, sans-serif" font-size="17" fill="#203952">id</text>
+  <text x="668" y="195" text-anchor="end" font-family="Arial, sans-serif" font-size="13" fill="#203952" font-weight="700">PK</text>
+  <path d="M418 207 h261" fill="none" stroke="#617b93" stroke-width="1.8"/>
+  <text x="431" y="232" text-anchor="start" font-family="Arial, sans-serif" font-size="17" fill="#203952">fecha</text>
+  <text x="668" y="232" text-anchor="end" font-family="Arial, sans-serif" font-size="13" fill="#203952" font-weight="700"></text>
+  <path d="M418 244 h261" fill="none" stroke="#617b93" stroke-width="1.8"/>
+  <text x="431" y="269" text-anchor="start" font-family="Arial, sans-serif" font-size="17" fill="#203952">descripcion</text>
+  <text x="668" y="269" text-anchor="end" font-family="Arial, sans-serif" font-size="13" fill="#203952" font-weight="700"></text>
+  <path d="M418 281 h261" fill="none" stroke="#617b93" stroke-width="1.8"/>
+  <text x="431" y="306" text-anchor="start" font-family="Arial, sans-serif" font-size="17" fill="#203952">tipo_operacion</text>
+  <text x="668" y="306" text-anchor="end" font-family="Arial, sans-serif" font-size="13" fill="#203952" font-weight="700"></text>
+  <path d="M418 318 h261" fill="none" stroke="#617b93" stroke-width="1.8"/>
+  <text x="431" y="343" text-anchor="start" font-family="Arial, sans-serif" font-size="17" fill="#203952">monto</text>
+  <text x="668" y="343" text-anchor="end" font-family="Arial, sans-serif" font-size="13" fill="#203952" font-weight="700"></text>
+  <path d="M418 355 h261" fill="none" stroke="#617b93" stroke-width="1.8"/>
+  <text x="431" y="380" text-anchor="start" font-family="Arial, sans-serif" font-size="17" fill="#203952">categoria_id</text>
+  <text x="668" y="380" text-anchor="end" font-family="Arial, sans-serif" font-size="13" fill="#203952" font-weight="700">FK · NULL</text>
+  <path d="M418 392 h261" fill="none" stroke="#617b93" stroke-width="1.8"/>
+  <text x="431" y="417" text-anchor="start" font-family="Arial, sans-serif" font-size="17" fill="#203952">nota</text>
+  <text x="668" y="417" text-anchor="end" font-family="Arial, sans-serif" font-size="13" fill="#203952" font-weight="700">NULL</text>
+  <rect x="813" y="118" width="280" height="311" rx="0" fill="white" stroke="#617b93"/>
+  <rect x="813" y="118" width="280" height="52" rx="0" fill="#eaf2fa" stroke="#617b93"/>
+  <text x="828" y="151" text-anchor="start" font-family="Arial, sans-serif" font-size="22" fill="#203952" font-weight="700">recordatorios</text>
+  <text x="827" y="195" text-anchor="start" font-family="Arial, sans-serif" font-size="17" fill="#203952">id</text>
+  <text x="1081" y="195" text-anchor="end" font-family="Arial, sans-serif" font-size="13" fill="#203952" font-weight="700">PK</text>
+  <path d="M814 207 h278" fill="none" stroke="#617b93" stroke-width="1.8"/>
+  <text x="827" y="232" text-anchor="start" font-family="Arial, sans-serif" font-size="17" fill="#203952">egreso_id</text>
+  <text x="1081" y="232" text-anchor="end" font-family="Arial, sans-serif" font-size="13" fill="#203952" font-weight="700">FK · UQ</text>
+  <path d="M814 244 h278" fill="none" stroke="#617b93" stroke-width="1.8"/>
+  <text x="827" y="269" text-anchor="start" font-family="Arial, sans-serif" font-size="17" fill="#203952">servicio</text>
+  <text x="1081" y="269" text-anchor="end" font-family="Arial, sans-serif" font-size="13" fill="#203952" font-weight="700"></text>
+  <path d="M814 281 h278" fill="none" stroke="#617b93" stroke-width="1.8"/>
+  <text x="827" y="306" text-anchor="start" font-family="Arial, sans-serif" font-size="17" fill="#203952">fecha_referencia</text>
+  <text x="1081" y="306" text-anchor="end" font-family="Arial, sans-serif" font-size="13" fill="#203952" font-weight="700"></text>
+  <path d="M814 318 h278" fill="none" stroke="#617b93" stroke-width="1.8"/>
+  <text x="827" y="343" text-anchor="start" font-family="Arial, sans-serif" font-size="17" fill="#203952">frecuencia</text>
+  <text x="1081" y="343" text-anchor="end" font-family="Arial, sans-serif" font-size="13" fill="#203952" font-weight="700"></text>
+  <path d="M814 355 h278" fill="none" stroke="#617b93" stroke-width="1.8"/>
+  <text x="827" y="380" text-anchor="start" font-family="Arial, sans-serif" font-size="17" fill="#203952">habilitado</text>
+  <text x="1081" y="380" text-anchor="end" font-family="Arial, sans-serif" font-size="13" fill="#203952" font-weight="700"></text>
+  <path d="M814 392 h278" fill="none" stroke="#617b93" stroke-width="1.8"/>
+  <text x="827" y="417" text-anchor="start" font-family="Arial, sans-serif" font-size="17" fill="#203952">ultimo_cobro_notificado</text>
+  <text x="1081" y="417" text-anchor="end" font-family="Arial, sans-serif" font-size="13" fill="#203952" font-weight="700"></text>
+  <path d="M283 210 H417" fill="none" stroke="#617b93" stroke-width="1.8"/>
+  <text x="350" y="177" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#203952">clasifica</text>
+  <text x="290" y="202" text-anchor="start" font-family="Arial, sans-serif" font-size="14" fill="#203952" font-weight="700">0..1</text>
+  <text x="409" y="202" text-anchor="end" font-family="Arial, sans-serif" font-size="14" fill="#203952" font-weight="700">0..*</text>
+  <path d="M680 210 H813" fill="none" stroke="#617b93" stroke-width="1.8"/>
+  <text x="746" y="177" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#203952">origina</text>
+  <text x="687" y="202" text-anchor="start" font-family="Arial, sans-serif" font-size="14" fill="#203952" font-weight="700">1</text>
+  <text x="807" y="202" text-anchor="end" font-family="Arial, sans-serif" font-size="14" fill="#203952" font-weight="700">0..1</text>
+  <text x="26" y="467" text-anchor="start" font-family="Arial, sans-serif" font-size="16" fill="#203952" font-weight="700">PK  Clave primaria autogenerada</text>
+  <text x="415" y="467" text-anchor="start" font-family="Arial, sans-serif" font-size="16" fill="#203952" font-weight="700">FK  Clave foránea</text>
+  <text x="813" y="467" text-anchor="start" font-family="Arial, sans-serif" font-size="16" fill="#203952" font-weight="700">UQ  Valor único</text>
+  <text x="26" y="496" text-anchor="start" font-family="Arial, sans-serif" font-size="16" fill="#203952">Al eliminar una categoría, sus egresos quedan sin categoría. Al eliminar un egreso, se elimina su recordatorio.</text>
+</svg>

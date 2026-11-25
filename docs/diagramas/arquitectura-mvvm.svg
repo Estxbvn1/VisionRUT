@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1140" height="623" viewBox="0 0 1140 623" role="img" aria-labelledby="title desc">
+  <title id="title">VisiónRUT · Arquitectura MVVM</title><desc id="desc">Las pantallas envían acciones al ViewModel y observan su StateFlow. Las reglas de dominio, el repositorio Room y el adaptador Android tienen responsabilidades separadas.</desc>
+  <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#617b93"/></marker></defs>
+  <rect width="1140" height="623" fill="white"/>
+  <text x="30" y="42" text-anchor="start" font-family="Arial, sans-serif" font-size="27" fill="#203952" font-weight="700">VisiónRUT · Arquitectura MVVM</text>
+  <rect x="362" y="70" width="416" height="81" rx="8" fill="#fff2e3" stroke="#617b93"/>
+  <text x="570" y="101" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#203952" font-weight="700">Interfaz · Jetpack Compose</text>
+  <text x="570" y="128" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#203952">Inicio, Resumen, Egresos y Recordatorios</text>
+  <path d="M450 151 V220" fill="none" stroke="#617b93" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <path d="M685 220 V151" fill="none" stroke="#617b93" stroke-width="1.8" marker-end="url(#arrow)" stroke-dasharray="5 4"/>
+  <text x="437" y="190" text-anchor="end" font-family="Arial, sans-serif" font-size="15" fill="#203952">acciones</text>
+  <text x="698" y="190" text-anchor="start" font-family="Arial, sans-serif" font-size="15" fill="#203952">UiState / StateFlow</text>
+  <rect x="362" y="221" width="416" height="82" rx="8" fill="#eaf2fa" stroke="#617b93"/>
+  <text x="570" y="252" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#203952" font-weight="700">VisionRUTViewModel</text>
+  <text x="570" y="279" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#203952">Estado de presentación y acciones del usuario</text>
+  <path d="M455 303 V331 H195 V376" fill="none" stroke="#617b93" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <path d="M570 303 V376" fill="none" stroke="#617b93" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <path d="M685 303 V331 H945 V376" fill="none" stroke="#617b93" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <text x="206" y="357" text-anchor="start" font-family="Arial, sans-serif" font-size="15" fill="#203952">aplica</text>
+  <text x="583" y="357" text-anchor="start" font-family="Arial, sans-serif" font-size="15" fill="#203952">consulta y modifica</text>
+  <text x="932" y="357" text-anchor="end" font-family="Arial, sans-serif" font-size="15" fill="#203952">programa y cancela</text>
+  <rect x="22" y="377" width="346" height="100" rx="8" fill="#eaf4ee" stroke="#617b93"/>
+  <text x="195" y="408" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#203952" font-weight="700">Reglas de negocio</text>
+  <text x="195" y="435" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#203952">CalculadorResumen · CalculadorRecurrencia</text>
+  <text x="195" y="458" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#203952">Totales, proyección, fechas y validaciones</text>
+  <rect x="397" y="377" width="346" height="100" rx="8" fill="#eaf2fa" stroke="#617b93"/>
+  <text x="570" y="408" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#203952" font-weight="700">VisionRUTRepository</text>
+  <text x="570" y="435" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#203952">RoomVisionRUTRepository</text>
+  <text x="570" y="458" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#203952">Lectura y escritura en transacciones</text>
+  <rect x="772" y="377" width="346" height="100" rx="8" fill="#f1eff9" stroke="#617b93"/>
+  <text x="945" y="408" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#203952" font-weight="700">ProgramadorRecordatorios</text>
+  <text x="945" y="435" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#203952">ProgramadorRecordatoriosAndroid</text>
+  <text x="945" y="458" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#203952">Adapta el contrato al sistema Android</text>
+  <path d="M570 477 V515" fill="none" stroke="#617b93" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <path d="M945 477 V515" fill="none" stroke="#617b93" stroke-width="1.8" marker-end="url(#arrow)"/>
+  <rect x="397" y="516" width="346" height="87" rx="8" fill="#eaf2fa" stroke="#617b93"/>
+  <text x="570" y="547" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#203952" font-weight="700">Room / SQLite</text>
+  <text x="570" y="574" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#203952">VisionDatabase (Singleton) · VisionDao</text>
+  <rect x="772" y="516" width="346" height="87" rx="8" fill="#f1eff9" stroke="#617b93"/>
+  <text x="945" y="547" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#203952" font-weight="700">Servicios Android</text>
+  <text x="945" y="574" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" fill="#203952">AlarmManager y notificaciones del sistema</text>
+</svg>
