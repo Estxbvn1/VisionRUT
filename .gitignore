@@ -1,0 +1,41 @@
+# Gradle y Android Studio
+.gradle/
+.kotlin/
+.idea/
+local.properties
+**/build/
+*.iml
+.cxx/
+.externalNativeBuild/
+captures/
+
+# Paquetes y archivos locales de ejecución
+*.apk
+*.aab
+*.ap_
+*.log
+*.hprof
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Credenciales y firma local
+.env
+.env.*
+!.env.example
+keystore.properties
+signing.properties
+secrets.properties
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
+*.key
+
+# Archivos del sistema
+.DS_Store
+Thumbs.db

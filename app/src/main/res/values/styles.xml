@@ -1,0 +1,11 @@
+<resources>
+    <style name="Theme.VisionRUT" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:fontFamily">@font/roboto_regular</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:statusBarColor">#FF7900</item>
+        <item name="android:navigationBarColor">#FFFFFF</item>
+        <item name="android:windowActionModeOverlay">true</item>
+        <item name="android:colorAccent">#3E50B4</item>
+        <item name="android:windowSoftInputMode">adjustResize</item>
+    </style>
+</resources>
