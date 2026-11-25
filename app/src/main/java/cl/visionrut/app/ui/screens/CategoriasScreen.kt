@@ -23,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cl.visionrut.app.data.Categoria
 import cl.visionrut.app.data.IncludedCategories
+import cl.visionrut.app.domain.nombreCategoriaDuplicado
 import cl.visionrut.app.ui.ContenidoPanel
 import cl.visionrut.app.ui.components.BotonPrincipal
 import cl.visionrut.app.ui.components.IconoCategoria
@@ -127,7 +128,7 @@ fun CrearCategoriaPanel(
     var icon by rememberSaveable { mutableStateOf("health") }
     var color by
         rememberSaveable { mutableLongStateOf(0xFF25B84B) }
-    val duplicate = categories.any { it.name.equals(name.trim(), true) }
+    val duplicate = nombreCategoriaDuplicado(name, categories.map(Categoria::name))
     ContenidoPanel(acciones = {
         BotonPrincipal("Crear categoría", enabled = name.isNotBlank() && !duplicate) {
             save(name, icon, color)

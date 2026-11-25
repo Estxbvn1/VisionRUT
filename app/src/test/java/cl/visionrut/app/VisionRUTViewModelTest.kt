@@ -173,12 +173,58 @@ class VisionRUTViewModelTest {
         assertNull(model.uiState.value.errorMessage)
     }
 
+    @Test
+    fun missingCategoryFallsBackToUncategorizedExpenses() = runTest {
+        val model = createModel()
+        val monthly = model.uiState.value.monthlyExpenses
+        val pendingIds = monthly.filter { it.categoryId == null }.map { it.id }
+        assertTrue(pendingIds.isNotEmpty())
+
+        model.selectFilter("9999")
+        advanceUntilIdle()
+
+        assertEquals("none", model.uiState.value.categoryFilter)
+        assertEquals(pendingIds, model.uiState.value.filteredExpenses.map { it.id })
+        assertEquals(monthly, model.uiState.value.monthlyExpenses)
+    }
+
+    @Test
+    fun manualNoticeUsesTheStoredEnabledStateAndPreservesTheSchedule() = runTest {
+        val repository = FakeRepository()
+        val notifications = FakeNotifications()
+        val model = createModel(repository, notifications)
+        val reminder = model.uiState.value.reminders.single()
+        val sent = mutableListOf<String>()
+
+        repository.toggleReminder(reminder, false)
+        model.previewReminder(reminder.id) { sent += it }
+        advanceUntilIdle()
+        assertTrue(sent.isEmpty())
+        assertTrue(notifications.previews.isEmpty())
+
+        repository.toggleReminder(reminder, true)
+        model.previewReminder(reminder.id) { sent += it }
+        advanceUntilIdle()
+
+        assertEquals(listOf(reminder.service), sent)
+        assertEquals(listOf(reminder), notifications.previews)
+        assertEquals(reminder, repository.getReminder(reminder.id))
+        assertTrue(notifications.scheduled.isEmpty())
+    }
+
     private class FakeNotifications : ProgramadorRecordatorios {
         val cancelled = mutableListOf<Long>()
+        val previews = mutableListOf<Recordatorio>()
+        val scheduled = mutableListOf<Recordatorio>()
 
-        override fun schedule(reminder: Recordatorio) = Unit
+        override fun schedule(reminder: Recordatorio) {
+            scheduled += reminder
+        }
 
-        override fun preview(reminder: Recordatorio) = reminder.enabled
+        override fun preview(reminder: Recordatorio): Boolean {
+            previews += reminder
+            return reminder.enabled
+        }
 
         override fun cancel(id: Long) {
             cancelled += id

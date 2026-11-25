@@ -2,6 +2,8 @@ package cl.visionrut.app.data
 
 import androidx.room.withTransaction
 import cl.visionrut.app.domain.CalculadorRecurrencia.billingDate
+import cl.visionrut.app.domain.nombreCategoriaDuplicado
+import cl.visionrut.app.domain.normalizarNombreCategoria
 import cl.visionrut.app.domain.noteLimited
 import java.time.LocalDate
 import java.time.YearMonth
@@ -55,10 +57,10 @@ class RoomVisionRUTRepository(private val database: VisionDatabase) : VisionRUTR
     }
 
     override suspend fun createCategory(name: String, icon: String, color: Long) {
-        val clean = name.trim()
-        require(clean.isNotEmpty() && clean.length <= 30)
+        val clean = normalizarNombreCategoria(name)
         database.withTransaction {
-            if (dao.hasCategoryName(clean)) throw ReglaIncumplida("Ya existe una categoría con ese nombre.")
+            if (nombreCategoriaDuplicado(clean, dao.categoryNames()))
+                throw ReglaIncumplida("Ya existe una categoría con ese nombre.")
             dao.saveCategory(Categoria(name = clean, icon = icon, color = color))
         }
     }

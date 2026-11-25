@@ -24,8 +24,8 @@ interface VisionDao {
 
     @Insert suspend fun saveCategory(category: Categoria): Long
 
-    @Query("SELECT EXISTS(SELECT 1 FROM categorias WHERE nombre = :name COLLATE NOCASE)")
-    suspend fun hasCategoryName(name: String): Boolean
+    @Query("SELECT nombre FROM categorias")
+    suspend fun categoryNames(): List<String>
 
     @Query("UPDATE egresos SET categoria_id = :categoryId, nota = :note WHERE id = :id")
     suspend fun editExpense(id: Long, categoryId: Long?, note: String?)
