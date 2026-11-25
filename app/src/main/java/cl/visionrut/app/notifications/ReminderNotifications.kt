@@ -104,15 +104,11 @@ object ReminderScheduler {
             Intent(context, MainActivity::class.java).putExtra("open_reminders", true),
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
         )
-        val message = "Próximo cobro: ${dateLabel(due)}."
         val notification = NotificationCompat.Builder(context, channelForReminders(context).id)
             .setSmallIcon(R.drawable.ic_notification)
             .setColor(0xFFFF7900.toInt())
-            .setContentTitle("Revisa ${reminder.service}")
-            .setContentText(message)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(
-                "$message Este aviso no paga ni cancela el servicio."
-            ))
+            .setContentTitle(reminder.service)
+            .setContentText("Próximo cobro: ${dateLabel(due)}")
             .setContentIntent(open)
             .setAutoCancel(true)
             .build()

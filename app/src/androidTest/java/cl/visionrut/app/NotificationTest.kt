@@ -64,7 +64,10 @@ class NotificationTest {
                 delay(100)
             }
             assertTrue("El receptor debe procesar el aviso local", delivered)
-            assertTrue(manager.activeNotifications.any { it.id == id.toInt() })
+            val notice = manager.activeNotifications.single { it.id == id.toInt() }.notification
+            assertEquals(saved.service, notice.extras.getString(android.app.Notification.EXTRA_TITLE))
+            assertEquals("Próximo cobro: ${cl.visionrut.app.util.dateLabel(due.toEpochDay())}",
+                notice.extras.getString(android.app.Notification.EXTRA_TEXT))
             assertEquals(due.plusMonths(1), dao.reminder(id)!!.nextDue())
             dao.toggleReminder(id, false)
             ReminderScheduler.schedule(context, dao.reminder(id)!!)

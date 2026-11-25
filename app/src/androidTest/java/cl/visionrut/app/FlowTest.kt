@@ -81,6 +81,15 @@ class FlowTest {
             waitText("Por categorizar")
             compose.onNodeWithText(money(current.sumOf { it.amount })).assertIsDisplayed()
 
+            val chart = compose.onNodeWithTag("summary-chart")
+            compose.onNodeWithTag("summary-list").performScrollToNode(hasTestTag("summary-chart"))
+            chart.performScrollTo().assertTextContains("Mayor gasto")
+            chart.performTouchInput {
+                click(androidx.compose.ui.geometry.Offset(width * .46f, height * .07f))
+            }
+            chart.assertTextContains("Categoría")
+            compose.onNodeWithTag("summary-list").performScrollToIndex(0)
+
             compose.onNodeWithTag("nav-1").performClick()
 
             compose.onNodeWithTag("nav-2").performClick()
