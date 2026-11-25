@@ -2,7 +2,8 @@ package cl.visionrut.app.ui
 
 import androidx.compose.foundation.LocalOverscrollFactory
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -14,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -47,8 +49,10 @@ fun systemBackAction(inModule: Boolean, tab: Int, panelOpen: Boolean): SystemBac
 
 // Encabezado y salida del módulo.
 @Composable
-fun Encabezado(title: String, back: () -> Unit, action: String? = null, onAction: () -> Unit = {}) {
-    Column(Modifier.fillMaxWidth().background(Orange).statusBarsPadding()) {
+fun Encabezado(back: () -> Unit, action: String? = null, onAction: () -> Unit = {}) {
+    Column(Modifier.fillMaxWidth()
+        .background(Orange, RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp))
+        .statusBarsPadding()) {
         Row(
             Modifier.height(48.dp).fillMaxWidth().padding(end = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -61,12 +65,7 @@ fun Encabezado(title: String, back: () -> Unit, action: String? = null, onAction
                     modifier = Modifier.size(23.dp),
                 )
             }
-            Text(
-                title,
-                color = Color.White,
-                fontSize = 18.sp,
-                modifier = Modifier.weight(1f).testTag("screen-title"),
-            )
+            Spacer(Modifier.weight(1f))
             if (action != null)
                 TextButton(onAction) { Text(action, color = Color.White, fontSize = 15.sp) }
         }
@@ -91,7 +90,7 @@ fun BarraNavegacion(
             ) {
                 Column(Modifier.weight(1f)) {
                     Text(
-                        "${selectedCount} seleccionados",
+                        if (selectedCount == 1) "1 seleccionado" else "$selectedCount seleccionados",
                         color = Blue,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Medium,
@@ -115,7 +114,7 @@ fun BarraNavegacion(
                 )
                 .forEachIndexed { index, (icon, label) ->
                     Column(
-                        Modifier.weight(1f).testTag("nav-$index").clickable {
+                        Modifier.weight(1f).testTag("nav-$index").selectable(selected = tab == index, role = Role.Tab) {
                             onTabSelected(index)
                         },
                         horizontalAlignment = Alignment.CenterHorizontally,

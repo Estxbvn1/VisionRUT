@@ -49,6 +49,8 @@ import cl.visionrut.app.ui.theme.Alert
 import cl.visionrut.app.ui.theme.Blue
 import cl.visionrut.app.ui.theme.Line
 import cl.visionrut.app.ui.theme.Muted
+import cl.visionrut.app.ui.theme.Red
+import cl.visionrut.app.util.dateLabel
 import cl.visionrut.app.util.money
 import cl.visionrut.app.viewmodel.VisionRUTUiState
 import java.time.YearMonth
@@ -65,7 +67,7 @@ fun EgresosScreen(
     selecting: Boolean,
     selected: Set<Long>,
     onMonth: (YearMonth) -> Unit,
-    openFilter: () -> Unit,
+    onFilter: (String) -> Unit,
     clearFilter: () -> Unit,
     onLongPress: (Egreso) -> Unit,
     onClearCategory: (Egreso) -> Unit,
@@ -94,7 +96,7 @@ fun EgresosScreen(
                         color = Muted,
                         modifier = Modifier.weight(1f),
                     )
-                    FiltroEgresos(filter, data.categories, rows.count { it.categoryId == null }, openFilter)
+                    FiltroEgresos(filter, data.categories, rows.count { it.categoryId == null }, onFilter)
                 }
                 Text(
                     money(rows.sumOf { it.amount }),
@@ -178,14 +180,15 @@ private fun FiltroEgresos(
     filter: String,
     categories: List<Categoria>,
     pendingCount: Int,
-    open: () -> Unit,
+    choose: (String) -> Unit,
 ) {
+    var expanded by remember { mutableStateOf(false) }
     Box(Modifier.widthIn(max = 174.dp)) {
         Row(
             Modifier.testTag("filter-picker")
                 .border(1.dp, Blue.copy(alpha = .18f), RoundedCornerShape(24.dp))
                 .background(Color(0xFFF4F5FC), RoundedCornerShape(24.dp))
-                .clickable(onClick = open)
+                .clickable { expanded = true }
                 .padding(horizontal = 11.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -202,29 +205,33 @@ private fun FiltroEgresos(
                 color = Blue,
             )
             Icon(
-                Icons.Outlined.ExpandMore,
+                if (expanded) Icons.Outlined.ExpandLess else Icons.Outlined.ExpandMore,
                 "Filtrar egresos",
                 Modifier.padding(start = 4.dp).size(17.dp),
                 tint = Blue,
             )
         }
-    }
-}
-
-@Composable
-fun FiltroEgresosPanel(data: VisionRUTUiState, close: () -> Unit, choose: (String) -> Unit) {
-    ContenidoPanel {
-        TituloPanel("Filtrar por categoría", close)
-        val pending = data.monthlyExpenses.count { it.categoryId == null }
-        val options = listOf("all" to "Todos", "none" to "Sin categoría ($pending)") +
-            data.categories.map { it.id.toString() to it.name }
-        options.forEach { (id, label) ->
-            Row(Modifier.fillMaxWidth().testTag("filter-choice-$id").clickable { choose(id) }
-                .padding(vertical = 13.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text(label, modifier = Modifier.weight(1f))
-                if (data.categoryFilter == id) Icon(Icons.Outlined.Check, "Seleccionado", tint = Blue)
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier.widthIn(min = 190.dp, max = 264.dp).heightIn(max = 320.dp),
+            containerColor = Color.White,
+        ) {
+            val options = listOf("all" to "Todos", "none" to "Sin categoría ($pendingCount)") +
+                categories.map { it.id.toString() to it.name }
+            options.forEach { (id, label) ->
+                DropdownMenuItem(
+                    text = { Text(label) },
+                    modifier = Modifier.testTag("filter-choice-$id"),
+                    trailingIcon = {
+                        if (filter == id) Icon(Icons.Outlined.Check, "Seleccionado", tint = Blue)
+                    },
+                    onClick = {
+                        expanded = false
+                        choose(id)
+                    },
+                )
             }
-            HorizontalDivider(color = Line)
         }
     }
 }
@@ -332,18 +339,10 @@ fun EditarEgresoPanel(
         BotonPrincipal("Guardar cambios") { save(categoryId, note) }
     }) {
         TituloPanel("Detalle del egreso", close)
-        EgresoRow(
-            expense,
-            categories.find { it.id == expense.categoryId },
-            interactive = false,
-            onClick = {},
-        )
-        Text(
-            expense.operation,
-            fontSize = 14.sp,
-            color = Muted,
-            modifier = Modifier.padding(start = 50.dp),
-        )
+        Text(expense.description, style = MaterialTheme.typography.titleMedium)
+        Text("−${money(expense.amount)}", color = Red, fontSize = 26.sp,
+            fontWeight = FontWeight.SemiBold, modifier = Modifier.padding(vertical = 4.dp))
+        Text("${dateLabel(expense.day)} · ${expense.operation}", color = Muted, fontSize = 14.sp)
         HorizontalDivider(Modifier.padding(vertical = 15.dp), color = Line)
         Text("Categoría", fontSize = 15.sp, fontWeight = FontWeight.Medium)
         Box(Modifier.fillMaxWidth().padding(vertical = 8.dp)) {

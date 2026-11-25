@@ -107,7 +107,7 @@ class FlowTest {
             android.os.SystemClock.sleep(350)
 
             clickText("Crear categoría")
-            waitSaved("Categoría guardada")
+            waitSaved("Categoría creada")
             summaryAction("action-Proyección de egresos")
 
             closeSheet()
@@ -144,7 +144,7 @@ class FlowTest {
 
             clickText("Aplicar")
             waitText("No tienes egresos por categorizar\neste mes.")
-            waitSaved("Categorías actualizadas")
+            waitSaved("${pending.size} egresos categorizados")
 
             assertEquals(
                 current.sumOf { it.amount },

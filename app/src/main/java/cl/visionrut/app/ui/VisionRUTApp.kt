@@ -10,16 +10,29 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalAccessibilityManager
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.LifecycleEventEffect
@@ -33,7 +46,6 @@ import cl.visionrut.app.ui.screens.CrearCategoriaPanel
 import cl.visionrut.app.ui.screens.ElegirSuscripcionPanel
 import cl.visionrut.app.ui.screens.EditarEgresoPanel
 import cl.visionrut.app.ui.screens.EditarRecordatorioPanel
-import cl.visionrut.app.ui.screens.FiltroEgresosPanel
 import cl.visionrut.app.ui.screens.EgresosScreen
 import cl.visionrut.app.ui.screens.InicioScreen
 import cl.visionrut.app.ui.screens.ProyeccionPanel
@@ -45,6 +57,8 @@ import cl.visionrut.app.ui.theme.Blue
 import cl.visionrut.app.viewmodel.VisionRUTViewModel
 import cl.visionrut.app.viewmodel.VisionRUTViewModelFactory
 import java.time.YearMonth
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
 /** Coordina las secciones, los permisos y los paneles del módulo. */
@@ -59,6 +73,16 @@ fun VisionRUTApp(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
+    val accessibility = LocalAccessibilityManager.current
+    var confirmation by remember { mutableStateOf("") }
+    var confirmationVisible by remember { mutableStateOf(false) }
+    var confirmationVersion by remember { mutableIntStateOf(0) }
+    LaunchedEffect(confirmationVersion) {
+        if (confirmationVersion > 0) {
+            delay(accessibility?.calculateRecommendedTimeoutMillis(1500L, containsText = true) ?: 1500L)
+            confirmationVisible = false
+        }
+    }
     var home by rememberSaveable { mutableStateOf(true) }
     var tab by rememberSaveable { mutableIntStateOf(0) }
     val month = data.selectedMonth
@@ -167,7 +191,9 @@ fun VisionRUTApp(
     fun saved(message: String) {
         saving = false
         closeAllPanels()
-        scope.launch { snackbar.showSnackbar(message) }
+        confirmation = message
+        confirmationVisible = true
+        confirmationVersion++
     }
     fun commitChange(ids: Set<Long>, category: Long?, note: String?, alarms: Set<Long>) {
         if (saving || ids.isEmpty()) return
@@ -185,7 +211,8 @@ fun VisionRUTApp(
                         vm.changeExpenses(ids, previous) {}
                 }
             } else saved(when {
-                bulk -> "Categorías actualizadas"
+                bulk && category == null -> if (ids.size == 1) "1 egreso sin categoría" else "${ids.size} egresos sin categoría"
+                bulk -> if (ids.size == 1) "1 egreso categorizado" else "${ids.size} egresos categorizados"
                 alarms.isNotEmpty() -> "Egreso actualizado y aviso cancelado"
                 else -> "Egreso actualizado"
             })
@@ -211,9 +238,11 @@ fun VisionRUTApp(
         }
     }
     LaunchedEffect(Unit) {
-        vm.errors.collect {
+        vm.errors.collectLatest { message ->
             saving = false
-            snackbar.showSnackbar(it)
+            confirmationVisible = false
+            snackbar.currentSnackbarData?.dismiss()
+            snackbar.showSnackbar(message, actionLabel = "Cerrar", duration = SnackbarDuration.Indefinite)
         }
     }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
@@ -249,12 +278,6 @@ fun VisionRUTApp(
             snackbarHost = { SnackbarHost(snackbar) },
             topBar = {
                 Encabezado(
-                    when {
-                        selecting -> "${selectedIds.size} seleccionados"
-                        tab == 0 -> "Resumen"
-                        tab == 1 -> "Egresos"
-                        else -> "Recordatorios"
-                    },
                     ::exitModule,
                     when {
                         selecting -> "Cancelar"
@@ -299,7 +322,10 @@ fun VisionRUTApp(
                             selecting,
                             selectedIds.toSet(),
                             ::changeMonth,
-                            openFilter = { showPanel("filter") },
+                            onFilter = {
+                                vm.selectFilter(it)
+                                expenseScroll.requestScrollToItem(0)
+                            },
                             clearFilter = { openExpenses("all") },
                             onLongPress = { expense ->
                                 vm.startSelection(expense.id)
@@ -344,6 +370,11 @@ fun VisionRUTApp(
                             },
                         )
                 }
+                AnimatedVisibility(
+                    visible = confirmationVisible,
+                    modifier = Modifier.align(Alignment.Center),
+                    enter = fadeIn(), exit = fadeOut(),
+                ) { ConfirmacionGuardada(confirmation) }
             }
         }
     }
@@ -369,11 +400,6 @@ fun VisionRUTApp(
             onDismiss = { if (panelGeneration == visibleGeneration) closePanel() },
         ) {
             when (sheet) {
-                "filter" -> FiltroEgresosPanel(data, ::closePanel) {
-                    vm.selectFilter(it)
-                    expenseScroll.requestScrollToItem(0)
-                    closePanel()
-                }
                 "categories" -> ContenidoPanel {
                     CategoriasPanel(data, ::closePanel, { showPanel("custom") },
                         delete = { category ->
@@ -388,7 +414,7 @@ fun VisionRUTApp(
                 "custom" -> CrearCategoriaPanel(data.categories, ::closePanel) { name, icon, color ->
                     if (!saving) {
                         saving = true
-                        vm.createCategory(name, icon, color) { saved("Categoría guardada") }
+                        vm.createCategory(name, icon, color) { saved("Categoría creada") }
                     }
                 }
                 "expense", "expenseCategory" -> data.expenses.find { it.id == expenseId }?.let { expense ->
@@ -470,4 +496,23 @@ fun VisionRUTApp(
         )
     }
 
+}
+
+@Composable
+private fun ConfirmacionGuardada(message: String) {
+    Surface(
+        modifier = Modifier.padding(horizontal = 24.dp).widthIn(max = 280.dp)
+            .semantics { liveRegion = LiveRegionMode.Polite },
+        shape = RoundedCornerShape(20.dp), color = Color.White, shadowElevation = 6.dp,
+    ) {
+        Column(Modifier.padding(horizontal = 22.dp, vertical = 16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(Modifier.size(42.dp).background(Color(0xFFE3F4E9), CircleShape),
+                contentAlignment = Alignment.Center) {
+                Icon(Icons.Outlined.Check, null, tint = Color(0xFF247446))
+            }
+            Spacer(Modifier.height(8.dp))
+            Text(message, style = MaterialTheme.typography.titleSmall, textAlign = TextAlign.Center)
+        }
+    }
 }

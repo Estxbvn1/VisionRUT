@@ -30,10 +30,6 @@ class GestureNavigationTest {
             compose.onAllNodesWithText(value).fetchSemanticsNodes().isNotEmpty()
         }
 
-    private fun title(value: String) {
-        compose.onNodeWithTag("screen-title").assertTextEquals(value)
-    }
-
     private fun back() {
         Espresso.pressBack()
         compose.waitForIdle()
@@ -49,7 +45,7 @@ class GestureNavigationTest {
     private fun enter() {
         waitText("VisionRUT")
         compose.onNodeWithTag("bank-visionrut").performScrollTo().performClick()
-        title("Resumen")
+        compose.onNodeWithTag("nav-0").assertIsSelected()
     }
 
     private fun allExpenses() {
@@ -87,10 +83,10 @@ class GestureNavigationTest {
         compose.onNodeWithTag("nav-1").performClick()
         compose.onNodeWithTag("nav-2").performClick()
         back()
-        title("Resumen")
+        compose.onNodeWithTag("nav-0").assertIsSelected()
         compose.onNodeWithTag("nav-1").performClick()
         back()
-        title("Resumen")
+        compose.onNodeWithTag("nav-0").assertIsSelected()
         compose
             .onNodeWithTag("summary-list")
             .performScrollToNode(hasTestTag("action-Gestionar categorías"))
@@ -99,13 +95,13 @@ class GestureNavigationTest {
         compose.onNodeWithTag("category-name").assertIsDisplayed()
         back()
         assertPanelClosed()
-        title("Resumen")
+        compose.onNodeWithTag("nav-0").assertIsSelected()
         allExpenses()
         val dao = VisionDatabase.get(compose.activity).dao()
         val row = expensesInMonth(dao.expenses().first(), DemoData.mesDeReferencia()).first()
         expense(row.id).performClick()
         back()
-        title("Egresos")
+        compose.onNodeWithTag("nav-1").assertIsSelected()
         assertPanelClosed()
         compose.onNodeWithContentDescription("Volver").performClick()
         waitText("VisionRUT")
@@ -122,13 +118,13 @@ class GestureNavigationTest {
         val pending = rows.first { it.categoryId == null }
         dao.editExpense(categorized.id, categorized.categoryId, "Nota conservada")
         expense(categorized.id).performTouchInput { longClick() }
-        title("1 seleccionados")
+        compose.onNodeWithText("1 seleccionado").assertIsDisplayed()
         expense(pending.id).performClick()
-        title("2 seleccionados")
+        compose.onNodeWithText("2 seleccionados").assertIsDisplayed()
         swipeLeft(categorized.id)
         assertEquals(categorized.categoryId, dao.expense(categorized.id)!!.categoryId)
         back()
-        title("Resumen")
+        compose.onNodeWithTag("nav-0").assertIsSelected()
         allExpenses()
         swipeLeft(categorized.id)
         assertEquals(categorized.categoryId, dao.expense(categorized.id)!!.categoryId)
