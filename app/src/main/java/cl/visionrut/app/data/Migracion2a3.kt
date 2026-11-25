@@ -32,7 +32,7 @@ internal object Migracion2a3 : Migration(2, 3) {
                     (NOT EXISTS (SELECT 1 FROM recordatorios WHERE egreso_id=egresos.id) OR
                      (categoria_id=6 AND ?=6 AND EXISTS (SELECT 1 FROM recordatorios
                       WHERE egreso_id=egresos.id AND servicio='Video mensual' AND frecuencia='mensual')))""",
-                    arrayOf(fecha, nuevo.description, nuevo.operation, nuevo.amount, nuevo.categoryId, nuevo.note,
+                    arrayOf<Any?>(fecha, nuevo.description, nuevo.operation, nuevo.amount, nuevo.categoryId, nuevo.note,
                         anterior.id, anterior.day, anterior.description, anterior.operation, anterior.amount,
                         anterior.categoryId, anterior.note, nuevo.categoryId))
             }
@@ -43,10 +43,10 @@ internal object Migracion2a3 : Migration(2, 3) {
         db.execSQL("""UPDATE egresos SET descripcion=?, tipo_operacion=?, monto=?, nota=?
             WHERE id=? AND fecha=? AND descripcion='LICENCIA SOFTWARE ANUAL' AND tipo_operacion='Cobro recurrente'
             AND monto=12000 AND categoria_id=6 AND nota='Licencia de respaldo de archivos'""",
-            arrayOf(nube.description, nube.operation, nube.amount, nube.note, nube.id, nube.day))
+            arrayOf<Any?>(nube.description, nube.operation, nube.amount, nube.note, nube.id, nube.day))
         db.execSQL("""UPDATE recordatorios SET servicio='Respaldo en la nube' WHERE servicio='Software anual'
             AND egreso_id IN (SELECT id FROM egresos WHERE id=? AND descripcion=?)""",
-            arrayOf(nube.id, nube.description))
+            arrayOf<Any?>(nube.id, nube.description))
     }
 
 

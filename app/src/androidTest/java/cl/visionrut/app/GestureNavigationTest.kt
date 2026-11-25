@@ -1,12 +1,11 @@
 package cl.visionrut.app
 
 import android.Manifest
-import android.view.KeyEvent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.test.espresso.Espresso
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.rule.GrantPermissionRule
 import cl.visionrut.app.data.DemoData
 import cl.visionrut.app.data.VisionDatabase
@@ -36,8 +35,15 @@ class GestureNavigationTest {
     }
 
     private fun back() {
-        InstrumentationRegistry.getInstrumentation().sendKeyDownUpSync(KeyEvent.KEYCODE_BACK)
+        Espresso.pressBack()
         compose.waitForIdle()
+    }
+
+    private fun assertPanelClosed() {
+        compose.waitUntil(5_000) {
+            compose.onAllNodesWithContentDescription("Cerrar panel").fetchSemanticsNodes().isEmpty()
+        }
+        compose.onNodeWithContentDescription("Cerrar panel").assertDoesNotExist()
     }
 
     private fun enter() {
@@ -71,7 +77,7 @@ class GestureNavigationTest {
     }
 
     @Test
-    fun systemBackReturnsToSummaryWhileTheHeaderLeavesTheModuleAndPanelsClose() = runBlocking {
+    fun systemBackReturnsToSummaryWhileTheHeaderLeavesTheModuleAndPanelsClose(): Unit = runBlocking {
         waitText("VisionRUT")
         compose.onNodeWithContentDescription("Mostrar saldo").performClick()
         compose.onNodeWithTag("bank-balance").assertTextEquals("$999.999.999.999")
@@ -90,8 +96,9 @@ class GestureNavigationTest {
             .performScrollToNode(hasTestTag("action-Gestionar categorías"))
         compose.onNodeWithTag("action-Gestionar categorías").performClick()
         compose.onNodeWithText("Crear").performClick()
+        compose.onNodeWithTag("category-name").assertIsDisplayed()
         back()
-        compose.onNodeWithContentDescription("Cerrar panel").assertDoesNotExist()
+        assertPanelClosed()
         title("Resumen")
         allExpenses()
         val dao = VisionDatabase.get(compose.activity).dao()
@@ -99,14 +106,14 @@ class GestureNavigationTest {
         expense(row.id).performClick()
         back()
         title("Egresos")
-        compose.onNodeWithContentDescription("Cerrar panel").assertDoesNotExist()
+        assertPanelClosed()
         compose.onNodeWithContentDescription("Volver").performClick()
         waitText("VisionRUT")
         compose.onNodeWithTag("bank-visionrut").assertExists()
     }
 
     @Test
-    fun longPressSelectsAndASwipeRequiresTappingTheExposedAction() = runBlocking {
+    fun longPressSelectsAndASwipeRequiresTappingTheExposedAction(): Unit = runBlocking {
         enter()
         allExpenses()
         val dao = VisionDatabase.get(compose.activity).dao()
@@ -147,7 +154,7 @@ class GestureNavigationTest {
     }
 
     @Test
-    fun deletingAReminderKeepsItsExpenseNoteAndCategory() = runBlocking {
+    fun deletingAReminderKeepsItsExpenseNoteAndCategory(): Unit = runBlocking {
         enter()
         val dao = VisionDatabase.get(compose.activity).dao()
         val reminder = dao.allReminders().first()

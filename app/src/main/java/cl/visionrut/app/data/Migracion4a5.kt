@@ -92,7 +92,7 @@ internal object Migracion4a5 : Migration(4, 5) {
         for (c in cambios) {
             db.execSQL("""UPDATE egresos SET nota=?, descripcion=COALESCE(?, descripcion)
                 WHERE id=? AND descripcion=? AND nota IS ? AND (? IS NULL OR categoria_id IS ?)""",
-                arrayOf(c.nota, c.nuevaGlosa, c.id, c.glosa, c.anterior, c.categoriaOriginal, c.categoriaOriginal))
+                arrayOf<Any?>(c.nota, c.nuevaGlosa, c.id, c.glosa, c.anterior, c.categoriaOriginal, c.categoriaOriginal))
         }
     }
 }

@@ -84,6 +84,12 @@ class ReglasDeNegocioTest {
     }
 
     @Test
+    fun sinCategoriaEstaReservadaAunqueNoSeaUnaFilaDeRoom() {
+        assertTrue(nombreCategoriaDuplicado("  SIN CATEGORÍA  ", emptyList()))
+        assertFalse(nombreCategoriaDuplicado("Delivery", emptyList()))
+    }
+
+    @Test
     fun avisoEntregadoNoAdelantaLaFechaDeCobroVisible() {
         val billingDay = LocalDate.of(2027, 1, 31)
         val reminder = Recordatorio(

@@ -8,5 +8,7 @@ internal fun normalizarNombreCategoria(name: String): String {
 
 internal fun nombreCategoriaDuplicado(name: String, existingNames: List<String>): Boolean {
     val trimmed = name.trim()
-    return existingNames.any { it.equals(trimmed, ignoreCase = true) }
+    // La opción integrada representa categoria_id = NULL y no aparece entre las filas de Room.
+    return trimmed.equals("Sin categoría", ignoreCase = true) ||
+        existingNames.any { it.equals(trimmed, ignoreCase = true) }
 }

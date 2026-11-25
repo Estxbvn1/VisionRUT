@@ -60,7 +60,7 @@ internal object Migracion3a4 : Migration(3, 4) {
     override fun migrate(db: SupportSQLiteDatabase) {
         for (p in precios) {
             db.execSQL("UPDATE egresos SET monto=? WHERE id=? AND descripcion=? AND monto=?",
-                arrayOf(p.nuevo, p.id, p.glosa, p.anterior))
+                arrayOf<Any?>(p.nuevo, p.id, p.glosa, p.anterior))
         }
         // Una transferencia ya anotada o reclasificada conserva también su significado original.
         for (r in transferencias) {
@@ -68,7 +68,7 @@ internal object Migracion3a4 : Migration(3, 4) {
                 WHERE id=? AND descripcion=? AND monto=? AND categoria_id=3 AND nota=?
                 AND tipo_operacion='Transferencia enviada'
                 AND NOT EXISTS (SELECT 1 FROM recordatorios WHERE egreso_id=egresos.id)""",
-                arrayOf(r.glosa, r.monto, r.categoria, r.nota, r.operacion,
+                arrayOf<Any?>(r.glosa, r.monto, r.categoria, r.nota, r.operacion,
                     r.id, r.glosaAnterior, r.montoAnterior, r.notaAnterior))
         }
     }
