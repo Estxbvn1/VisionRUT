@@ -1,121 +1,88 @@
-# VisionRUT
+# VisiónRUT
 
-Prototipo académico Android para conocer y organizar los egresos de CuentaRUT. BancoEstado aparece únicamente como referencia visual del lugar donde se propone integrar el módulo. La app se llama VisionRUT, tiene identidad propia y trabaja con datos simulados almacenados en el teléfono.
+Aplicación académica Android para reconocer y organizar egresos de CuentaRUT. Una glosa como `MERPAGO*RAMONDIAZ` identifica el cargo en la cartola. Su categoría y una nota personal permiten recordar qué se compró. El prototipo utiliza movimientos simulados y funciona localmente. La pantalla de inicio ilustra una posible entrada desde BancoEstado.
 
-## Abrir y compilar
+## Abrir y ejecutar en otro computador
 
-Abrir la carpeta `VisionRUT` en Android Studio. Utilizar el JDK 21 integrado, instalar el SDK 36 y sincronizar Gradle. El módulo ejecutable es `app`.
+1. Inicia sesión en GitHub con una cuenta que tenga acceso al repositorio privado. En Android Studio elige **Get from VCS** o **Clone Repository** y pega `https://github.com/Estxbvn1/VisionRUT.git`. También puedes elegir **Code → Download ZIP** en GitHub y descomprimir el archivo en una carpeta de trabajo.
+2. Si descargaste el ZIP, elige **Open** en Android Studio y selecciona la carpeta que contiene `settings.gradle.kts`, `gradlew` y `app/`. Puede llamarse `VisionRUT-main`.
+3. Usa Android Studio compatible con AGP 9.2.1 (por ejemplo, Quail 2). En **SDK Manager** instala **Android SDK Platform 36** y acepta las licencias solicitadas. El proyecto usa JDK 21 para Gradle. Si Studio pide un JDK, selecciona uno de esa versión en la configuración de Gradle.
+4. Deja terminar **Gradle Sync**. La primera sincronización necesita internet para descargar Gradle y las dependencias. Studio usa la ubicación de tu propio SDK. El repositorio incluye el Gradle Wrapper.
+5. En **Device Manager**, inicia un emulador con Android 8.0 (API 26) o superior. También puedes conectar un teléfono con depuración USB habilitada y autorizar el computador. Elige el dispositivo, selecciona **app** y pulsa **Run ▶**.
+6. Abre **VisionRUT** desde la pantalla bancaria simulada. La primera apertura prepara la cartola local. En Android 13 o superior, concede el permiso de notificaciones si quieres demostrar avisos.
+
+Un ZIP contiene el código fuente. Clonar conserva además el historial de Git y permite recibir cambios con `git pull`. Una *Release* puede identificar una entrega y ofrecer un APK para instalar en un teléfono. Es opcional para abrir y compilar el proyecto.
+
+## Funciones y alcance
+
+- **Resumen** muestra total, cantidad, pendientes y distribución por categoría del mes elegido. Desde ahí se accede a los egresos filtrados y a la proyección.
+- **Egresos** permite consultar la glosa original, filtrar, asignar o quitar una categoría individualmente o en grupo y guardar una nota opcional de hasta 40 caracteres Unicode. Reclasificar conserva el monto del movimiento.
+- **Categorías** permite crear categorías personales con nombre, icono y color, y eliminarlas. Las ocho categorías incorporadas están protegidas y «Sin categoría» es un nombre reservado. Al eliminar una propia se conservan los movimientos y sus notas.
+- **Recordatorios** permite crear, editar, activar y eliminar avisos mensuales o anuales vinculados a un cobro de Suscripciones. El aviso programado apunta a las 09:00 locales del día anterior. Android puede aplazar la entrega. La campana de un recordatorio activo permite demostrar el aviso de ese servicio sin adelantar el siguiente cobro.
+- **Proyección** estima el mes siguiente por categoría. Usa el mes consultado y hasta dos anteriores con datos. Si el mes está en curso, estima su cierre en proporción a los días transcurridos. Incluye los egresos sin categoría y reparte el redondeo al peso para que el desglose sume el total. Requiere movimientos en el mes consultado.
+
+La muestra cubre agosto a noviembre de 2026 y usa pesos chilenos. Se cargan los movimientos hasta la fecha del dispositivo. Antes de agosto de 2026 la cartola está vacía y después de noviembre la consulta inicial se sitúa en noviembre. La aplicación no solicita credenciales bancarias ni se conecta a servicios del banco. Los recordatorios tampoco efectúan pagos ni cancelaciones.
+
+## Estructura y arquitectura
+
+El módulo Android es `app`. El código principal se encuentra en `app/src/main/java/cl/visionrut/app/`.
+
+| Ubicación | Responsabilidad |
+| --- | --- |
+| `MainActivity.kt`, `ui/` | Entrada al módulo, navegación, pantallas Compose, componentes y tema. |
+| `viewmodel/` | Acciones del usuario, filtros, selección, carga, errores y publicación de `VisionRUTUiState`. |
+| `domain/`, `util/` | Cálculos, recurrencias, validaciones y formatos de fecha y moneda para Chile. |
+| `data/` | Contrato de repositorio, implementación Room, entidades, DAO, migraciones y datos simulados. |
+| `notifications/`, `ReminderReceivers.kt` | Adaptador de alarmas, publicación de notificaciones y restauración tras reinicio o cambio de hora. |
+| `app/src/main/res/`, `app/schemas/` | Recursos de la interfaz y esquemas históricos exportados por Room. |
+| `app/src/test/`, `app/src/androidTest/` | Pruebas locales de JVM y pruebas instrumentadas en Android, respectivamente. |
+
+La interfaz envía acciones al **ViewModel** y observa su **StateFlow** con el ciclo de vida de la pantalla (Observer). El ViewModel depende de los contratos **VisionRUTRepository** y **ProgramadorRecordatorios**. El repositorio implementa las operaciones sobre el DAO, agrupando cambios relacionados en transacciones. **VisionDatabase** comparte una sola instancia de Room por proceso (Singleton). **ProgramadorRecordatoriosAndroid** adapta el contrato a los servicios del sistema (Adapter). Estas dos interfaces también permiten probar el ViewModel con sustitutos.
+
+## Base de datos
+
+Room guarda `visionrut.db` en el almacenamiento privado de la aplicación. El esquema está en la versión 5, con migraciones consecutivas desde la versión 1.
+
+| Tabla | Columnas |
+| --- | --- |
+| `categorias` | `id` (PK), `nombre`, `icono`, `color`, `es_predefinida` |
+| `egresos` | `id` (PK), `fecha`, `descripcion`, `tipo_operacion`, `monto`, `categoria_id` (FK opcional), `nota` |
+| `recordatorios` | `id` (PK), `egreso_id` (FK obligatoria y única), `servicio`, `fecha_referencia`, `frecuencia`, `habilitado`, `ultimo_cobro_notificado` |
+
+Las claves primarias son enteras autogeneradas. `categoria_id = NULL` representa «Sin categoría». La clave foránea aplica `ON DELETE SET NULL`. La relación con recordatorios admite como máximo uno por egreso y aplica `ON DELETE CASCADE` al borrar el egreso. Al **reclasificar** una suscripción con aviso, el usuario debe confirmar. El repositorio elimina el recordatorio junto con la reasignación en una transacción y el ViewModel solicita cancelar la alarma correspondiente.
+
+Los montos son enteros en CLP. Las fechas de negocio son días desde el 1 de enero de 1970 (`LocalDate.toEpochDay()`). Esto conserva el día civil al guardar y leer sin convertir una fecha de compra en una hora UTC. Para programar la alarma sí se combina la víspera con una hora y la zona local. `ultimo_cobro_notificado` guarda el día del **vencimiento** cuyo aviso se entregó. El valor inicial es `-1`. Permite identificar el ciclo ya atendido al restaurar las alarmas y conservar la fecha de cobro visible.
+
+Para inspeccionar datos, ejecuta **app** en un emulador API 26+ y abre **View → Tool Windows → App Inspection → Database Inspector**. Selecciona el proceso `cl.visionrut.app`, expande `visionrut.db` y abre una tabla. Para leer fechas en una consulta utiliza `date('1970-01-01', fecha || ' days')` en la tabla `egresos`.
+
+## Entorno y dependencias
+
+| Componente | Configuración del proyecto |
+| --- | --- |
+| Android | min SDK 26, compile y target SDK 36 |
+| Compilación | Android Gradle Plugin 9.2.1, Gradle Wrapper 9.4.1, JDK del daemon 21, compatibilidad Java 17 |
+| Kotlin y Compose | Kotlin integrado en AGP, plugin de compilación Compose 2.2.10, Compose BOM 2026.02.01, UI 1.10.4, Material 3 1.4.0 |
+| Persistencia y estado | Room 2.8.4, KSP 2.3.6, Lifecycle 2.10.0, corrutinas Android 1.9.0 |
+| Pruebas | JUnit 4.13.2, coroutines-test, AndroidJUnitRunner, Compose UI Test y Espresso 3.7.0 |
+
+## Compilación y pruebas
+
+Desde la raíz del proyecto en PowerShell:
 
 ```powershell
-.\gradlew.bat assembleDebug
-.\gradlew.bat testDebugUnitTest
+.\gradlew.bat :app:assembleDebug
+.\gradlew.bat :app:testDebugUnitTest
+.\gradlew.bat :app:connectedDebugAndroidTest
 ```
 
-## Estructura
+En macOS o Linux usa `./gradlew` en lugar de `.\gradlew.bat`. Si PowerShell indica que no encuentra Java, configura `JAVA_HOME` para la sesión. Por ejemplo, si Android Studio está instalado en su ruta habitual y su JBR es JDK 21:
 
-Dentro de `app/src/main/java/cl/visionrut/app/`:
-
-```text
-MainActivity.kt                 Entrada de Android y accesos desde avisos
-ReminderReceivers.kt             Recepción de alarmas y restauración de avisos
-data/
-  Models.kt                     Categorías, egresos, recordatorios y datos persistidos
-  DemoData.kt                   Categorías iniciales y movimientos simulados
-  VisionDatabase.kt             Configuración e instancia compartida de Room
-  VisionDao.kt                  Consultas y escrituras de la base de datos
-  Migracion1a2.kt               Conversión del esquema anterior y sus relaciones
-  Migracion2a3.kt               Actualización de los movimientos de demostración reconocidos
-  Migracion3a4.kt               Ajuste de montos y compras cotidianas en la cartola
-  Migracion4a5.kt               Actualización de notas de demostración que conservan su texto original
-  VisionRUTRepository.kt        Contrato del repositorio e implementación local
-domain/
-  ExpenseRules.kt               Totales, distribución, proyección y límite de notas
-  ReminderCalendar.kt           Recurrencias mensuales y anuales
-viewmodel/
-  VisionRUTViewModel.kt          Estado observable, acciones y fábrica del ViewModel
-notifications/
-  ReminderNotifications.kt      Contrato de avisos, adaptador y AlarmManager
-ui/
-  VisionRUTApp.kt               Coordinación de pantallas, permisos y acciones
-  Navigation.kt                 Reglas de Atrás, encabezado, barra inferior y paneles
-  screens/
-    InicioScreen.kt             Escenario bancario de referencia
-    ResumenScreen.kt            Totales, gráfico y panel de proyección
-    EgresosScreen.kt            Listado, filtros, gestos, edición y categorización
-    CategoriasScreen.kt         Gestión de categorías, iconos y colores disponibles
-    RecordatoriosScreen.kt     Listado, edición y eliminación de recordatorios
-  components/
-    Components.kt              Elementos visuales compartidos entre pantallas
-    Icons.kt                   Iconos de navegación y categorías
-  theme/
-    Theme.kt                   Paleta, tipografía y tema de Material Design
-util/
-  Formatters.kt                Formatos de moneda y fecha
+```powershell
+$env:JAVA_HOME = "$env:ProgramFiles\Android\Android Studio\jbr"
 ```
 
-Cada pantalla reúne sus componentes y formularios relacionados. Los componentes exclusivos se mantienen privados cuando no necesitan utilizarse desde otro archivo; los compartidos están en `components`. Un archivo puede contener varias funciones o clases relacionadas, sin mezclar interfaz, persistencia y programación de alarmas.
+Las **26 pruebas locales** ejercitan reglas de negocio, proyección y redondeo, filtros, notas Unicode, recurrencias, navegación y acciones del ViewModel. En Android Studio abre `app/src/test/java/cl/visionrut/app/` en la vista **Project**. Puedes ejecutar una clase desde el triángulo junto a su nombre. El informe de Gradle queda en `app/build/reports/tests/testDebugUnitTest/index.html`.
 
-Los receptores permanecen en el paquete raíz porque Android los identifica por su nombre completo. `ReminderReceivers.kt` contiene ambos receptores, conservando esa identidad para las alarmas existentes.
+Las **9 pruebas instrumentadas** ejercitan Room y migraciones (4), navegación y gestos (3), un recorrido funcional (1) y entrega de notificación al invocar el receptor (1). Para ejecutarlas, inicia un emulador con la fecha dentro o después de la muestra; para reproducir la cartola completa usa diciembre de 2026 o posterior. Ejecuta el comando `connectedDebugAndroidTest` con el emulador disponible. La puntualidad real de los avisos bajo ahorro de batería requiere una comprobación en el teléfono de destino.
 
-## Arquitectura: MVVM + Repository
-
-```text
-Usuario → Pantallas Compose → VisionRUTViewModel → VisionRUTRepository → Room / DAO
-              ↑                      │
-              └── VisionRUTUiState ───┘
-                     StateFlow
-```
-
-- **View:** muestra el estado y envía acciones. Las pantallas no realizan consultas a Room.
-- **ViewModel:** gestiona mes, filtro, selección múltiple, carga, errores y operaciones del módulo. Prepara los egresos filtrados, la distribución y la proyección. Expone `StateFlow<VisionRUTUiState>`; su estado mutable es privado.
-- **Repository:** concentra las lecturas y escrituras y valida las operaciones persistidas. Su implementación utiliza Room y transacciones locales.
-- **Model / Data:** representa los datos y el almacenamiento. Room exporta los esquemas a `app/schemas/` al compilar.
-- **Notificaciones:** un adaptador independiente conecta las solicitudes de avisos con `AlarmManager`. El ViewModel no conserva referencias a una Activity.
-
-`VisionRUTViewModel.kt` reúne tres declaraciones relacionadas: `VisionRUTUiState`, `VisionRUTViewModel` y `VisionRUTViewModelFactory`. La fábrica proporciona el repositorio, el adaptador de avisos y `SavedStateHandle` al ViewModel. Este último conserva filtros y selección cuando Android recrea la pantalla. Navegación, paneles abiertos y desplazamiento permanecen en la interfaz, porque son estado visual.
-
-## Tecnologías y almacenamiento
-
-| Elemento | Configuración y función |
-|---|---|
-| Android mínimo | Android 8.0 / API 26 |
-| Target y Compile SDK | API 36 |
-| JDK de desarrollo | JDK 21; comprobado con 21.0.10 |
-| Compatibilidad Java | Código fuente y bytecode Java 17 |
-| Android Studio | Panda 4, 2025.3.4 Patch 1 |
-| Kotlin | 2.2.10, lenguaje principal |
-| Jetpack Compose | UI declarativa; BOM 2026.02.01 |
-| Lifecycle / ViewModel | 2.10.0, estado y ciclo de vida |
-| Corrutinas y Flow | 1.9.0, operaciones asíncronas y estado observable |
-| Room | 2.8.4, persistencia SQLite local |
-| KSP | 2.3.6, procesamiento de las anotaciones Room |
-| AlarmManager | Servicio Android para avisos locales |
-| AGP / Gradle | 9.2.1 / 9.4.1, herramientas de compilación |
-
-El origen de los datos es local: movimientos simulados y persistencia con Room. No hay conexión a un servicio web ni integración con cuentas bancarias reales.
-
-## Pruebas y recursos
-
-`app/src/test/` contiene pruebas de cálculos, navegación y ViewModel con repositorio y avisos de prueba. `app/src/androidTest/` contiene las pruebas que requieren un teléfono: interfaz, Room y notificaciones.
-
-Los recursos necesarios están en `app/src/main/res/`. La licencia de Roboto está en `licenses/Roboto.txt`. La base local conserva notas, categorías y recordatorios en `visionrut.db`.
-
-## Modelo de datos de la etapa 2
-
-Room utiliza tres tablas de la aplicación en `visionrut.db` (versión 5). En Database Inspector se ven también las tablas internas de Android, SQLite y Room.
-
-| Tabla | Campos |
-| --- | --- |
-| `categorias` | `id`, `nombre`, `icono`, `color`, `es_predefinida` |
-| `egresos` | `id`, `fecha`, `descripcion`, `tipo_operacion`, `monto`, `categoria_id`, `nota` |
-| `recordatorios` | `id`, `egreso_id`, `servicio`, `fecha_referencia`, `frecuencia`, `habilitado`, `ultimo_cobro_notificado` |
-
-Cada tabla tiene una clave primaria entera autoincremental. Los montos se guardan en pesos chilenos y las fechas en días desde el 1 de enero de 1970. `egresos.categoria_id` admite NULL. Al eliminar una categoría propia, SQLite deja sus egresos sin categoría. `recordatorios.egreso_id` es obligatorio, único y referencia al egreso. El campo técnico `ultimo_cobro_notificado` evita repetir un aviso ya entregado.
-
-La cartola de demostración abarca agosto, septiembre, octubre y noviembre de 2026. La persona usa CuentaRUT para sus compras diarias, salidas y servicios. Paga el arriendo y los gastos comunes desde otra cuenta. Los egresos mensuales de CuentaRUT suman entre $360.000 y $420.000. La app muestra los movimientos hasta la fecha del dispositivo y al abrirse después de noviembre presenta el último mes de la muestra. Las glosas reproducen formatos de cartola y los importes representan compras simuladas en Santiago. Cada pedido de Uber Eats o Rappi tiene una nota con el local y queda disponible para que el usuario cree su categoría de delivery. En noviembre hay además tres pagos pendientes de identificar.
-
-La migración de datos reconoce movimientos de las muestras anteriores. Conserva filas con ediciones personales y respeta los vínculos de los recordatorios. En las aperturas siguientes, la carga por identificador conserva las notas y las categorías que el usuario haya cambiado.
-
-La proyección de diciembre promedia los egresos de septiembre, octubre y noviembre. Si noviembre está en curso, estima su cierre multiplicando el gasto acumulado por los días del mes y dividiendo por los días transcurridos. Al seleccionar un mes anterior, la ventana se desplaza y se usan los meses disponibles. Los egresos pendientes se incluyen en «Sin categoría».
-
-La campana «Enviar ahora» de un recordatorio activo publica el aviso de ese servicio cuando Android permite las notificaciones. El envío manual es independiente del aviso programado.
+Los archivos de configuración del SDK, las credenciales y los productos generados se excluyen de Git. La licencia Apache 2.0 de los archivos de fuente Roboto distribuidos con la aplicación se incluye en `licenses/Roboto.txt`.
