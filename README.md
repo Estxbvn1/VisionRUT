@@ -25,17 +25,47 @@ La muestra cubre agosto a noviembre de 2026 y usa pesos chilenos. Se cargan los 
 
 ## Estructura y arquitectura
 
-![Arquitectura MVVM de VisiónRUT. La interfaz observa el estado del ViewModel, que utiliza reglas de dominio, un repositorio Room y un adaptador de recordatorios.](docs/diagramas/arquitectura-mvvm.svg)
+```mermaid
+flowchart TD
+    vista["Vista · Jetpack Compose"]
+    vm["VisionRUTViewModel"]
+    reglas["Reglas de negocio<br/>Resumen y recurrencias"]
+    repo["VisionRUTRepository<br/>RoomVisionRUTRepository"]
+    avisos["ProgramadorRecordatorios<br/>ProgramadorRecordatoriosAndroid"]
+    bd["Room · SQLite<br/>VisionDao y VisionDatabase"]
+    android["Servicios Android<br/>AlarmManager y notificaciones"]
+
+    vista -->|Acciones del usuario| vm
+    vm -.->|Estado mediante StateFlow| vista
+    vm -->|Aplica| reglas
+    vm -->|Consulta y modifica| repo
+    vm -->|Programa y cancela| avisos
+    repo --> bd
+    avisos --> android
+
+    classDef interfaz fill:#fff2e3,stroke:#617b93,color:#203952
+    classDef datos fill:#eaf2fa,stroke:#617b93,color:#203952
+    classDef dominio fill:#eaf4ee,stroke:#617b93,color:#203952
+    classDef sistema fill:#f1eff9,stroke:#617b93,color:#203952
+    class vista interfaz
+    class vm,repo,bd datos
+    class reglas dominio
+    class avisos,android sistema
+```
 
 El código del módulo está en [cl/visionrut/app](app/src/main/java/cl/visionrut/app). Los paquetes `ui`, `viewmodel`, `domain`, `data` y `notifications` corresponden a los componentes del diagrama. La interfaz observa el estado según su ciclo de vida. Los contratos del repositorio y del programador permiten probar el ViewModel con implementaciones de prueba.
 
 ## Base de datos
 
-![Modelo relacional de VisiónRUT. Cada egreso puede tener una categoría y hasta un recordatorio.](docs/diagramas/modelo-relacional.svg)
+Room guarda `visionrut.db` en el almacenamiento privado de la aplicación. El esquema está en la versión 5, con migraciones consecutivas desde la versión 1.
 
-La base se almacena en el espacio privado de la aplicación. Room conserva [los esquemas de las versiones 1 a 5](app/schemas/cl.visionrut.app.data.VisionDatabase) para documentar sus migraciones. Una referencia de categoría nula representa «Sin categoría».
+| Tabla | Columnas |
+| --- | --- |
+| `categorias` | `id` (PK), `nombre`, `icono`, `color`, `es_predefinida` |
+| `egresos` | `id` (PK), `fecha`, `descripcion`, `tipo_operacion`, `monto`, `categoria_id` (FK opcional), `nota` |
+| `recordatorios` | `id` (PK), `egreso_id` (FK obligatoria y única), `servicio`, `fecha_referencia`, `frecuencia`, `habilitado`, `ultimo_cobro_notificado` |
 
-Al **reclasificar** una suscripción con aviso, el usuario debe confirmar. El repositorio elimina el recordatorio junto con la reasignación en una transacción y el ViewModel solicita cancelar la alarma correspondiente.
+Las claves primarias son enteras autogeneradas. `categoria_id = NULL` representa «Sin categoría». La clave foránea aplica `ON DELETE SET NULL`. La relación con recordatorios admite como máximo uno por egreso y aplica `ON DELETE CASCADE` al borrar el egreso. Al **reclasificar** una suscripción con aviso, el usuario debe confirmar. El repositorio elimina el recordatorio junto con la reasignación en una transacción y el ViewModel solicita cancelar la alarma correspondiente.
 
 Los montos son enteros en CLP. Las fechas de negocio son días desde el 1 de enero de 1970 (`LocalDate.toEpochDay()`). Esto conserva el día civil al guardar y leer sin convertir una fecha de compra en una hora UTC. Para programar la alarma sí se combina la víspera con una hora y la zona local. `ultimo_cobro_notificado` guarda el día del **vencimiento** cuyo aviso se entregó. El valor inicial es `-1`. Permite identificar el ciclo ya atendido al restaurar las alarmas y conservar la fecha de cobro visible.
 
