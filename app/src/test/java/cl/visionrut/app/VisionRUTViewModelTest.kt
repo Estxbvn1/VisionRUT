@@ -282,8 +282,9 @@ class VisionRUTViewModelTest {
 
         override suspend fun getReminders() = data.value.reminders
 
-        override suspend fun deleteReminder(id: Long) {
+        override suspend fun deleteReminder(id: Long): List<Long> {
             data.value = data.value.copy(reminders = data.value.reminders.filterNot { it.id == id })
+            return listOf(id)
         }
 
         override suspend fun toggleReminder(reminder: Recordatorio, enabled: Boolean) {

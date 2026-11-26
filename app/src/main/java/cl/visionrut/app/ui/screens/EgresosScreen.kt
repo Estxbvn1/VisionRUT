@@ -75,6 +75,7 @@ fun EgresosScreen(
 ) {
     val haptic = LocalHapticFeedback.current
     val rows = data.monthlyExpenses
+    val pendingCount = rows.count { it.categoryId == null }
     val filtered = data.filteredExpenses
     LazyColumn(
         Modifier.fillMaxSize().testTag("expense-list"),
@@ -83,6 +84,23 @@ fun EgresosScreen(
         verticalArrangement = Arrangement.spacedBy(7.dp),
     ) {
         item { SelectorMes(month, data.months, onMonth) }
+        if (pendingCount > 0 && filter != "none" && !selecting) {
+            item {
+                Surface(
+                    onClick = { onFilter("none") },
+                    shape = RoundedCornerShape(12.dp),
+                    color = Color(0xFFFFF5D9),
+                ) {
+                    Row(Modifier.fillMaxWidth().heightIn(min = 48.dp).padding(horizontal = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Outlined.WarningAmber, null, tint = Color(0xFF916100))
+                        Text(if (pendingCount == 1) "1 egreso por categorizar" else "$pendingCount egresos por categorizar",
+                            Modifier.weight(1f).padding(horizontal = 10.dp), fontSize = 14.sp)
+                        Icon(Icons.Outlined.ChevronRight, "Ver pendientes", tint = Blue)
+                    }
+                }
+            }
+        }
         item {
             Tarjeta {
                 Row(
@@ -96,7 +114,7 @@ fun EgresosScreen(
                         color = Muted,
                         modifier = Modifier.weight(1f),
                     )
-                    FiltroEgresos(filter, data.categories, rows.count { it.categoryId == null }, onFilter)
+                    FiltroEgresos(filter, data.categories, pendingCount, onFilter)
                 }
                 Text(
                     money(rows.sumOf { it.amount }),
@@ -317,7 +335,7 @@ fun EditarEgresoPanel(
     close: () -> Unit,
     pickingCategory: Boolean,
     selectCategory: (Boolean) -> Unit,
-    hasReminder: Boolean,
+    reminderEnabled: Boolean?,
     save: (Long?, String) -> Unit,
     reminder: () -> Unit,
 ) {
@@ -375,9 +393,15 @@ fun EditarEgresoPanel(
             supportingText = { Text("${noteLength(note)}/40", modifier = Modifier.fillMaxWidth()) },
             shape = RoundedCornerShape(9.dp),
         )
-        if (expense.categoryId == SUBSCRIPTIONS_ID)
+        if (expense.categoryId == SUBSCRIPTIONS_ID && categoryId == SUBSCRIPTIONS_ID)
             TextButton(reminder, Modifier.fillMaxWidth()) {
-                Text(if (hasReminder) "Ver recordatorio" else "Crear recordatorio desde este cobro")
+                Icon(Icons.Outlined.Notifications, null, Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text(when (reminderEnabled) {
+                    true -> "Recordatorio activo · Ver"
+                    false -> "Recordatorio pausado · Ver"
+                    null -> "Sin recordatorio · Crear"
+                })
             }
     }
 }

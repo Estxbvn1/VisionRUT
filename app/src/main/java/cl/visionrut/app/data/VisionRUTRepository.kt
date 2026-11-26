@@ -2,6 +2,7 @@ package cl.visionrut.app.data
 
 import androidx.room.withTransaction
 import cl.visionrut.app.domain.CalculadorRecurrencia.billingDate
+import cl.visionrut.app.domain.agruparSuscripciones
 import cl.visionrut.app.domain.nombreCategoriaDuplicado
 import cl.visionrut.app.domain.normalizarNombreCategoria
 import cl.visionrut.app.domain.noteLimited
@@ -23,7 +24,7 @@ interface VisionRUTRepository {
     suspend fun saveReminder(original: Recordatorio?, expense: Egreso, service: String,
         date: LocalDate, frequency: String): Recordatorio
     suspend fun toggleReminder(reminder: Recordatorio, enabled: Boolean)
-    suspend fun deleteReminder(id: Long)
+    suspend fun deleteReminder(id: Long): List<Long>
     suspend fun getReminder(id: Long): Recordatorio?
     suspend fun getReminders(): List<Recordatorio>
     suspend fun markNotified(id: Long, due: Long)
@@ -31,6 +32,8 @@ interface VisionRUTRepository {
 
 class RoomVisionRUTRepository(private val database: VisionDatabase) : VisionRUTRepository {
     private val dao = database.dao()
+    private suspend fun subscriptions() =
+        agruparSuscripciones(dao.expensesByCategory(SUBSCRIPTIONS_ID), dao.allReminders())
 
     override fun observeData() =
         combine(dao.categories(), dao.expenses(), dao.reminders()) { categories, expenses, reminders ->
@@ -46,14 +49,27 @@ class RoomVisionRUTRepository(private val database: VisionDatabase) : VisionRUTR
         confirmedReminders: Set<Long>): List<Long> = database.withTransaction {
         require(ids.isNotEmpty() && (note == null || ids.size == 1))
         require(categoryId == null || dao.category(categoryId) != null)
-        val affected = if (categoryId == SUBSCRIPTIONS_ID) emptyList()
-            else dao.remindersForExpenses(ids.toList()).map { it.id }
-        if (!confirmedReminders.containsAll(affected))
-            throw ReglaIncumplida("Hay un recordatorio asociado. Revisa el cambio y vuelve a confirmar.")
-        affected.forEach { dao.deleteReminder(it) }
+        val removed = mutableListOf<Long>()
+        if (categoryId != SUBSCRIPTIONS_ID) {
+            for (group in subscriptions()) {
+                val reminder = group.aviso ?: continue
+                if (group.avisos.none { it.expenseId in ids }) continue
+                val remaining = group.cobros.firstOrNull { it.id !in ids }
+                if (remaining == null && reminder.id !in confirmedReminders)
+                    throw ReglaIncumplida("Es el último cobro de la suscripción. Confirma para eliminar su aviso.")
+                for (old in group.avisos) {
+                    if (remaining == null || old.id != reminder.id) {
+                        dao.deleteReminder(old.id)
+                        removed.add(old.id)
+                    }
+                }
+                if (remaining != null && reminder.expenseId in ids)
+                    dao.updateReminder(reminder.copy(expenseId = remaining.id))
+            }
+        }
         if (note == null) dao.categorize(ids.toList(), categoryId)
         else dao.editExpense(ids.single(), categoryId, noteLimited(note).ifEmpty { null })
-        affected
+        removed
     }
 
     override suspend fun createCategory(name: String, icon: String, color: Long) {
@@ -73,10 +89,11 @@ class RoomVisionRUTRepository(private val database: VisionDatabase) : VisionRUTR
     override suspend fun saveReminder(original: Recordatorio?, expense: Egreso, service: String,
         date: LocalDate, frequency: String): Recordatorio = database.withTransaction {
         require(service.isNotBlank() && frequency in setOf("mensual", "anual"))
-        require(dao.expense(expense.id)?.categoryId == SUBSCRIPTIONS_ID)
-        val existing = dao.remindersForExpenses(listOf(expense.id)).singleOrNull()
+        val group = subscriptions().firstOrNull { it.contiene(expense.id) }
+            ?: throw ReglaIncumplida("El egreso ya no pertenece a Suscripciones.")
+        val existing = group.aviso
         if (original == null && existing != null)
-            throw ReglaIncumplida("Este cobro ya tiene un recordatorio.")
+            throw ReglaIncumplida("Esta suscripción ya tiene un recordatorio.")
         if (original != null && existing?.id != original.id)
             throw ReglaIncumplida("El recordatorio ya no está disponible.")
         val today = LocalDate.now()
@@ -86,7 +103,7 @@ class RoomVisionRUTRepository(private val database: VisionDatabase) : VisionRUTR
         val preserveCalendar = existing != null && existing.frequency == frequency &&
             (existing.anchorDay == scheduledDate || existing.billingDate() == date)
         val reminder = Recordatorio(
-            id = existing?.id ?: 0, expenseId = expense.id, service = noteLimited(service.trim()),
+            id = existing?.id ?: 0, expenseId = existing?.expenseId ?: expense.id, service = noteLimited(service.trim()),
             anchorDay = if (preserveCalendar) checkNotNull(existing).anchorDay else scheduledDate,
             frequency = frequency, enabled = existing?.enabled ?: true,
             lastNotifiedDue = existing?.lastNotifiedDue?.takeIf { preserveCalendar || it == scheduledDate } ?: -1,
@@ -98,10 +115,20 @@ class RoomVisionRUTRepository(private val database: VisionDatabase) : VisionRUTR
         }
     }
 
-    override suspend fun toggleReminder(reminder: Recordatorio, enabled: Boolean) =
+    override suspend fun toggleReminder(reminder: Recordatorio, enabled: Boolean) = database.withTransaction {
+        if (subscriptions().none { it.aviso?.id == reminder.id })
+            throw ReglaIncumplida("El recordatorio ya no está disponible.")
         dao.toggleReminder(reminder.id, enabled)
-    override suspend fun deleteReminder(id: Long) = dao.deleteReminder(id)
-    override suspend fun getReminder(id: Long) = dao.reminder(id)
-    override suspend fun getReminders() = dao.allReminders()
+    }
+    override suspend fun deleteReminder(id: Long): List<Long> = database.withTransaction {
+        val group = subscriptions().firstOrNull { it.aviso?.id == id }
+        val ids = group?.avisos.orEmpty().map { it.id }
+        ids.forEach { dao.deleteReminder(it) }
+        ids
+    }
+    override suspend fun getReminder(id: Long) = getReminders().find { it.id == id }
+    override suspend fun getReminders() = database.withTransaction {
+        subscriptions().mapNotNull { it.aviso }.sortedBy { it.id }
+    }
     override suspend fun markNotified(id: Long, due: Long) = dao.notified(id, due)
 }

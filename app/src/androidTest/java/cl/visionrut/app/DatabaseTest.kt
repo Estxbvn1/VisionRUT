@@ -90,7 +90,16 @@ class DatabaseTest {
             assertEquals(custom.id, dao.expense(12)!!.categoryId)
             assertEquals("Taller", dao.expense(12)!!.note)
 
-            val ids = setOf(11L, 12L)
+            val source = dao.expense(11)!!
+            val nextMonth = source.copy(id = 13, day = source.day + 31, note = null)
+            dao.insertExpenses(listOf(nextMonth))
+            val duplicate = runCatching {
+                repo.saveReminder(null, nextMonth, "Otro nombre", LocalDate.now().plusDays(10), "mensual")
+            }
+            assertTrue(duplicate.exceptionOrNull() is ReglaIncumplida)
+            assertTrue(repo.updateExpenses(setOf(11L), null, null, emptySet()).isEmpty())
+            assertEquals(reminder.copy(expenseId = 13), repo.getReminder(reminder.id))
+            val ids = setOf(13L, 12L)
             val rejected = runCatching { repo.updateExpenses(ids, null, null, emptySet()) }
             assertTrue(rejected.exceptionOrNull() is ReglaIncumplida)
             assertNotNull(dao.reminder(2))

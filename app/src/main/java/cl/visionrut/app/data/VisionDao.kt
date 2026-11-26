@@ -39,13 +39,12 @@ interface VisionDao {
     @Query("SELECT * FROM categorias WHERE id = :id") suspend fun category(id: Long): Categoria?
     @Query("SELECT * FROM egresos WHERE id = :id") suspend fun expense(id: Long): Egreso?
 
-    @Query("SELECT * FROM recordatorios WHERE egreso_id IN (:ids)")
-    suspend fun remindersForExpenses(ids: List<Long>): List<Recordatorio>
-
     @Insert suspend fun saveReminder(reminder: Recordatorio): Long
     @Update suspend fun updateReminder(reminder: Recordatorio): Int
     @Query("SELECT * FROM recordatorios WHERE id = :id") suspend fun reminder(id: Long): Recordatorio?
     @Query("SELECT * FROM recordatorios") suspend fun allReminders(): List<Recordatorio>
+    @Query("SELECT * FROM egresos WHERE categoria_id = :categoryId ORDER BY fecha DESC, id")
+    suspend fun expensesByCategory(categoryId: Long): List<Egreso>
     @Query("UPDATE recordatorios SET habilitado = :enabled WHERE id = :id")
     suspend fun toggleReminder(id: Long, enabled: Boolean)
 

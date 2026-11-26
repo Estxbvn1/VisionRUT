@@ -28,6 +28,7 @@ import cl.visionrut.app.data.IncludedCategories
 import cl.visionrut.app.data.Recordatorio
 import cl.visionrut.app.domain.CalculadorRecurrencia.billingDate
 import cl.visionrut.app.domain.CalculadorResumen.expensesInMonth
+import cl.visionrut.app.domain.claveSuscripcion
 import cl.visionrut.app.data.SUBSCRIPTIONS_ID
 import cl.visionrut.app.ui.ContenidoPanel
 import cl.visionrut.app.ui.components.SelectorMes
@@ -212,11 +213,11 @@ fun ElegirSuscripcionPanel(
     ContenidoPanel {
         TituloPanel("Elegir suscripción", close)
         SelectorMes(month, data.months, onMonth)
-        val charges = expensesInMonth(data.expenses, month).filter { it.categoryId == SUBSCRIPTIONS_ID }
-        val reminders = data.reminders.associateBy { it.expenseId }
+        val charges = expensesInMonth(data.expenses, month)
+            .filter { it.categoryId == SUBSCRIPTIONS_ID }.distinctBy { it.claveSuscripcion() }
         if (charges.isEmpty()) Aviso("No hay cobros de suscripciones este mes. Puedes consultar otro mes.")
         charges.forEach { expense ->
-            val reminder = reminders[expense.id]
+            val reminder = data.suscripciones.find { it.contiene(expense.id) }?.aviso
             Row(
                 Modifier.fillMaxWidth().testTag("charge-${expense.id}")
                     .clickable(enabled = reminder == null) { choose(expense) }

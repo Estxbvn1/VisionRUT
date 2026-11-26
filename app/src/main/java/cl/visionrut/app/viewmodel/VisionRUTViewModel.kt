@@ -17,6 +17,8 @@ import cl.visionrut.app.data.VisionDatabase
 import cl.visionrut.app.data.VisionRUTData
 import cl.visionrut.app.data.VisionRUTRepository
 import cl.visionrut.app.domain.CategoryTotal
+import cl.visionrut.app.domain.Suscripcion
+import cl.visionrut.app.domain.agruparSuscripciones
 import cl.visionrut.app.domain.Projection
 import cl.visionrut.app.domain.CalculadorResumen.distribution
 import cl.visionrut.app.domain.CalculadorResumen.expensesInMonth
@@ -41,6 +43,7 @@ data class VisionRUTUiState(
     val categories: List<Categoria> = emptyList(),
     val expenses: List<Egreso> = emptyList(),
     val reminders: List<Recordatorio> = emptyList(),
+    val suscripciones: List<Suscripcion> = emptyList(),
     val months: Set<String> = emptySet(),
     val loading: Boolean = true,
     val errorMessage: String? = null,
@@ -164,8 +167,7 @@ class VisionRUTViewModel(
     }
 
     fun deleteReminder(reminder: Recordatorio, done: () -> Unit) = execute {
-        repository.deleteReminder(reminder.id)
-        notifications.cancel(reminder.id)
+        repository.deleteReminder(reminder.id).forEach(notifications::cancel)
         done()
     }
 
@@ -198,10 +200,12 @@ class VisionRUTViewModel(
                 else -> expense.categoryId == filter.toLongOrNull()
             }
         }
+        val subscriptions = agruparSuscripciones(data.expenses, data.reminders)
         return VisionRUTUiState(
             categories = data.categories,
             expenses = data.expenses,
-            reminders = data.reminders,
+            reminders = subscriptions.mapNotNull { it.aviso }.sortedBy { it.id },
+            suscripciones = subscriptions,
             months = data.months,
             loading = !ready,
             errorMessage = error,

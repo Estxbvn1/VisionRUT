@@ -221,7 +221,8 @@ fun VisionRUTApp(
 
     fun requestChange(ids: Set<Long>, category: Long?, note: String? = null) {
         if (saving) return
-        val alarms = data.reminders.filter { it.expenseId in ids && category != SUBSCRIPTIONS_ID }
+        val alarms = if (category == SUBSCRIPTIONS_ID) emptyList() else
+            data.suscripciones.filter { it.pierdeTodosLosCobros(ids) }.mapNotNull { it.aviso }
         if (alarms.isEmpty()) commitChange(ids, category, note, emptySet())
         else {
             pendingIds = ids.toLongArray()
@@ -418,14 +419,14 @@ fun VisionRUTApp(
                     }
                 }
                 "expense", "expenseCategory" -> data.expenses.find { it.id == expenseId }?.let { expense ->
-                    val reminder = data.reminders.find { it.expenseId == expense.id }
+                    val reminder = data.suscripciones.find { it.contiene(expense.id) }?.aviso
                     EditarEgresoPanel(expense, data.categories, ::closePanel,
                         pickingCategory = sheet == "expenseCategory",
                         selectCategory = { choosing ->
                             panelGeneration++
                             sheet = if (choosing) "expenseCategory" else "expense"
                         },
-                        hasReminder = reminder != null,
+                        reminderEnabled = reminder?.enabled,
                         save = { category, note -> requestChange(setOf(expense.id), category, note) },
                         reminder = {
                             reminderId = reminder?.id ?: -1
@@ -486,7 +487,8 @@ fun VisionRUTApp(
         AlertDialog(
             onDismissRequest = { pendingAlarms = longArrayOf() },
             title = { Text(if (count == 1) "¿Eliminar el recordatorio asociado?" else "¿Eliminar $count recordatorios?") },
-            text = { Text("Al sacar estos cobros de Suscripciones se cancelarán sus avisos. Si cancelas, se conservarán la categoría, la nota y los recordatorios.") },
+            text = { Text(if (count == 1) "Este cambio deja a la suscripción sin cobros asociados. También se eliminará su recordatorio."
+                else "Este cambio deja a $count suscripciones sin cobros asociados. También se eliminarán sus recordatorios.") },
             confirmButton = { TextButton({
                 val confirmed = pendingAlarms.toSet()
                 pendingAlarms = longArrayOf()
