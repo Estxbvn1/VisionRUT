@@ -50,7 +50,8 @@ class GestureNavigationTest {
 
     private fun allExpenses() {
         compose.onNodeWithTag("nav-1").performClick()
-        compose.onNodeWithTag("filter-picker").performScrollTo().performClick()
+        compose.onNodeWithTag("expense-list").performScrollToNode(hasTestTag("filter-picker"))
+        compose.onNodeWithTag("filter-picker").performClick()
         compose.onNodeWithTag("filter-choice-all").performClick()
     }
 
